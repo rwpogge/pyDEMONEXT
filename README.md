@@ -34,6 +34,10 @@ Runtime configuration files for the DEMONEXT 2025 system.
 
 Development versions of python3 scripts to replace the original python2 code.
 
+### Documents
+
+Copies of manuals for the DEMONEXT hardwar and associated materials.
+
 ## Development Jupyter Notebooks
 
 ### `DEMONEXT Sandbox.ipynb`
