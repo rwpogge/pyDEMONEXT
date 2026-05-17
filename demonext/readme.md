@@ -1,6 +1,8 @@
 # DEMONEXT observatory control system
 
-**Updated: 2026 May 16 [rwp/osu]**
+**Updated: 2026 May 17 [rwp/osu]**
+
+See the [Release Notes](releases.md) for details.
 
 ## Modules and Scripts
 
