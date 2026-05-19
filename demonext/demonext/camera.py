@@ -18,6 +18,7 @@ Modification History
     2025 Jan 30 - added science() method, bug fixes [rwp/osu]
     2025 Apr 30 - bug fixes from lab testing [rwp/osu]
     2026 Mar 29 - added observatory site telemetry info [rwp/osu]
+    2026 May 19 - fixed bugs from live testing at SRO [rwp/osu]
     
 """
 
@@ -1472,11 +1473,15 @@ class Camera:
             logger.exception(msg)
             raise RuntimeError(msg)
 
-        # log start of cooling
-
-        if newSetPoint:
+        # If we were given an optional set point, change it
+        
+        if not newSetPoint:
+            pass
+        else:
             self.setpoint = newSetPoint
-            
+        
+        # start cooldown 
+        
         if wait:
             logger.info(f"Starting CCD cooldown to {self.setpoint:.1f}C")
         else:
