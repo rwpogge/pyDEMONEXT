@@ -10,6 +10,7 @@ Author:
 
 Modification History:
    2026 Mar 29 - added SRO roof and weather info after live tests at SRO [rwp/osu]
+   2026 Jun 06 - modifications from on-sky at SRO [rwp/osu]
 
 """
 
@@ -642,5 +643,11 @@ class Site:
             info["SRO_SKY"] = f'{self.weather["clouds"]}, {self.weather["rain"]}, {self.weather["sky"]}, {self.weather["skyTemp"]:.1f} C'
         else:
             info["SRO_LINK"] = "DOWN"
+
+        # Site-dependent telemetry of interest
+
+        info["SUNALT"] = f"{self.sunAlt():.4f}" # sun altitude at start of exposure
+
+        # return the dictionary
             
         return info

@@ -1,7 +1,12 @@
 # DEMONEXT module release notes
 
-**Last Release: 2026 May 19**
+**Last Release: 2026 June 06**
 
+## Version 1.0.3 - 2026 Jun 06
+Live testing at SRO.
+ * `demonext/site.py`: Added `SUNALT` keyword to the FITS header dictionary returned by the `Site` class `siteTelemetry()` method.
+ * Added keywords to the runtime configuration file to create a `skyflats` dictionary with parameters for automated acquisition of sky flats (in-development, still gathering live data to inform the process)
+ 
 ## Version 1.0.2 - 2026 May 19
 Patch, fixed bug in `Camera.cooldown()` method that ignored changing the set point with the 
 optional argument.

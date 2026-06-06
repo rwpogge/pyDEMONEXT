@@ -1,5 +1,9 @@
 # pyDEMONEXT
 
+*Current Version: v1.0.3 [2026 June 6]
+
+See the [Release Notes](releases.md) for details.
+
 Repository of code and hardware/software configuration files for the DEMONEXT reboot project begun in 2025.
 
 This repository was split off from the alpha-level development version on https://github.com/kyleecpi/DEMONEXT after deployment
