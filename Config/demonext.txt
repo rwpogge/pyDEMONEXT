@@ -121,17 +121,17 @@ calibration:
 skyflats:
   minExp: 10.0       # minimum exposure time in seconds (shutter shading)
   maxExp: 60.0       # maximum exposure time in seconds
-  targetADU: 25000.0 # target flat signal level in ADU
+  targetADU: 30000.0 # target flat signal level in ADU
   minADU: 10000.0    # minimum acceptable flat signal level in ADU
-  maxADU: 45000.0    # maximum acceptable flat signal level in ADU
+  maxADU: 50000.0    # maximum acceptable flat signal level in ADU
   flatAz: 180.0      # skyflat pointing azimuth in degrees (180=south)
   flatEl:  90.0      # skyflat pointing elevation in degrees (90=zenith)
   meanBias: 990.0    # nominal mean bias in ADU for exposure scaling
   evenGain: 1.1      # evening sky flat gain factor (fading sky)
   mornGain: 0.9      # morning sky flat gain factor (brightening sky)
   tracking: N        # track during sky flats?
-  minSunAlt: -15.0   # minimum Sun altitude in degrees
-  maxSunAlt:  -6.0   # maximum Sun altitude in degrees
+  minSunAlt: -12.0   # minimum Sun altitude in degrees
+  maxSunAlt:  -4.0   # maximum Sun altitude in degrees
 
 # Default project information placeholders
 
