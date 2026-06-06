@@ -2,12 +2,12 @@
 # 
 # DEMONEXT YAML configuration file
 #
-# Updated: 2026 May 18 - rwp/osu
+# Updated: 2026 June 05 - rwp/osu
 #
 # Notes added under the various entries
 #
 # data, logging, and configuration directories
-#   if not a full qualified path, assumes relative to $HOME
+#    if not a full qualified path, assumes relative to $HOME
 # added ccd, focuser, and calibration program entries [2025Jan03, rwp/osu]
 # added guider entries, updated focuser entries [2025Jan07, rwp/osu]
 # updated focuser range [2025Jan25, rwp/osu]
@@ -16,6 +16,7 @@
 # mods and additions on-site at SRO [2026Mar18, rwp/osu]
 # missing bits added during live testing [2026May18, rwp/osu]
 # sky flat parameters added [2026May23, rwp/osu]
+# added sky flat min/max Sun altitudes [2026Jun05, rwp/osu]
 #
 
 directories:
@@ -129,6 +130,8 @@ skyflats:
   evenGain: 1.1      # evening sky flat gain factor (fading sky)
   mornGain: 0.9      # morning sky flat gain factor (brightening sky)
   tracking: N        # track during sky flats?
+  minSunAlt: -15.0   # minimum Sun altitude in degrees
+  maxSunAlt:  -6.0   # maximum Sun altitude in degrees
 
 # Default project information placeholders
 
