@@ -1,4 +1,4 @@
-# DEMONEXT 2025 Development Sandbox
+# DEMONEXT Reboot Development Sandbox
 
 Scripts and Jupyter notebooks used for developing the DEMONEXT 2025 system code.
 
@@ -31,6 +31,7 @@ Uses the yaml `demonext.txt` configuration file, in `Config`
  * `CameraSandbox.ipynb` to develop, test, and document camera (`Camera` class) and focuser (`Focuser` class) operations. Note the filter wheel is controlled through the Camera class.  Tests include telescope interaction.
  * `SRO_Sandbox.ipynb` to develop, test, and document code for reading the SRO site weather data and building roll-off roof status (open or closed).
  * `Site_Sandbox.ipynb` to develop and test the `Site` class
+ * `Pegasus_Sandbox.ipynb` to develop and test ASCOM interface code for the Pegasus Power Box Gen 2 (ASCOM `Switch` class)
 
 The current versions of all these notebooks were live testing during DEMONEXT installation and post-installation verification and alignment at SRO during the week of 2026 March 15-19.
 
