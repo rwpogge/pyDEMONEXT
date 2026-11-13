@@ -2,13 +2,14 @@
 # 
 # raritanPDU class default configuration file
 #
-# This is for the DEMONEXT PDU in the lab
+# This is for the DEMONEXT Electronics Box PDU at SRO
 #
 # Initial Version: 
 #  2024 Dec 18 - rwp/osu
 #
 # Updates:
 #  2026 Feb 3 - added SRO network assignments [rwp/osu]
+#  2026 Nov 12 - changed "ccd" outlet name to "instrument"
 #
 
 pdu:
@@ -16,7 +17,7 @@ pdu:
   userID: telemetry
   passwd: myPass    # placeholder, replace with actual
   disableCert: Yes  # disable certificate verification
-  timeout: 10       # RPC timeotu in seconds
+  timeout: 10       # RPC timeout in seconds
   switchDelay: 1    # switch operation delay in seconds
-  outletNames: ["pc","ccd","telescope","aux"]
+  outletNames: ["pc","instrument","telescope","aux"]
 

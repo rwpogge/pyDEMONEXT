@@ -2,7 +2,7 @@
 # 
 # DEMONEXT YAML configuration file
 #
-# Updated: 2026 June 05 - rwp/osu
+# Updated: 2026 Nov 12 - rwp/osu
 #
 # Notes added under the various entries
 #
@@ -17,6 +17,7 @@
 # missing bits added during live testing [2026May18, rwp/osu]
 # sky flat parameters added [2026May23, rwp/osu]
 # added sky flat min/max Sun altitudes [2026Jun05, rwp/osu]
+# ccd -> science, new CMOS camera and Pegasus PDU [2026Nov12, rwp/osu]
 #
 
 directories:
@@ -55,18 +56,24 @@ instrument:
   FOCUSER: "PlaneWave Hedrick"
   FOCUSSSZ: 1.0 # focuser step size in microns
 
-# Raritan PDU
+# Main System PDU (Raritan)
 
 pdu:
   config: ".demonext/config/raritanPDU.txt"
 
-# Science CCD and filter wheel parameter
+# Instrument PDU (Pegasus Power Box Gen 2)
 
-ccd:
-  Setpoint: -20 # CCD TEC cooler setpoint temperature in C
+inst:
+  config: ".demonext/config/pegasusPDU.txt"
+
+# Science Camera and filter wheel parameters
+
+science:
+  INSTRUME: "ZWO ASI6200MM-Pro"
+  Setpoint: -10      # TEC setpoint temperature in C
   MaxExpTime: 1800.0 # max exposure time in seconds
-  Binning: [1,1]     # unbinned pixels
-  FWStepTime: 1.2  # seconds to move 1 filter position in seconds
+  Binning: [1,1]     # default xy binning factors
+  FWStepTime: 1.2    # seconds to move 1 filter position in seconds
 
 # Guide Telescope and camera configuration
 

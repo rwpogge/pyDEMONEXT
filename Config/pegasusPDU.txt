@@ -1,0 +1,19 @@
+---
+# 
+# pegasusPDU class default configuration file
+#
+# This is for the Pegasus Power Box Gen 2 installed in
+# late 2026 with the new sCMOS science camera.
+#
+# Initial Version: 
+#  2026 Nov 12 - rwp/osu
+#
+# Updates:
+#
+
+pegasus:
+  ascomID: "ASCOM.Device1.Switch"
+  switchDelay: 1    # switch operation delay in seconds
+  outletNames: ["quad","adj","dewa","dewb","autodew","usb2"]
+  outletAddrs: [0,1,2,3,7,8]
+

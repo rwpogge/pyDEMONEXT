@@ -61,8 +61,16 @@ Prototype DEMONEXT runtime configuration file
 <dl>
   <dt><code>raritanPDU.txt</code></dt>
     <dd>ASCII text file in YAML format with the default runtime parameters for the DEMONEXT Raritan PXO 4-port PDU used by the `raritanPDU.py` class</dd>
-    <dd>See also the similar section in <code>demonext.txt</code>.  We will eventually embed the name/path in the main DEMONEXT runtime configuration
-      file so we can use this file for standalone programs, and changes there will automatically become visible to the DEMONEXT systems that operate the PDU for subsystem power management.</dd>
+    <dd>We embed the name/path in the main DEMONEXT runtime configuration file so we can use this file for standalone programs, and changes there will automatically become visible to the DEMONEXT systems that operate the primary PDU for observatory power management.</dd>
+</dl>
+
+### Pegasus PDU runtime configuration file
+
+<dl>
+  <dt><code>pegasusPDU.txt</code></dt>
+    <dd>ASCII text file in YAML format with the default runtime parameters for the DEMONEXT Pegasus Power Box Advanced (Gen 2) instrument PDU and USB hub used for the focal plane and guider instruments (science camera, filter wheel, PlaneWave EFA box, guide camera, and guide focuser), used by the `PegasusPDU` classclass</dd>
+    <dd>Like the Raritan config, we embed the name/path in the main DEMONEXT runtime configuration
+      file so we can use this file for standalone programs, and changes there will automatically become visible to the DEMONEXT systems that operate the focal plane PDU subsystem.</dd>
 </dl>
 
 ## Observation Files
