@@ -32,11 +32,11 @@ status codes returned).
 
 ### demonext
 
-Source folder for the DEMONEXT observatory control system pytho code.
+Source folder for the DEMONEXT observatory control system python code.
 
 ### Config
 
-Runtime configuration files for the DEMONEXT 2025 system.  
+Runtime configuration files for the DEMONEXT system.  
 
 ### Scripts
 
@@ -48,6 +48,6 @@ Copies of manuals for the DEMONEXT hardwar and associated materials.
 
 ### Sandbox
 
-Scripts and notebooks used to develop the 2025 reboot code base, and
+Scripts and notebooks used to develop the reboot code base, and
 for on-going work.
 
