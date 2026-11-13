@@ -1,6 +1,18 @@
 # pyDEMONEXT Release Notes
 
-**Last Release: 2026 Jun 06**
+**Last Release: 2026 Nov 12**
+
+## VErsion 1.1.0 - 2026 Nov 12
+Start of updates for the impending swapout of the FLI CCD camera for a new ZWO sCMOS sensor, and addition of a Pegasus Power Box focal plane instrument PDU and USB hub to replace the power and USB distribution functions of the FLI CCD.
+ * `Config/demonext.txt` - adding hooks for new equipment
+ * `Config/raritanPDU.txt` - changes for the instrument swap
+ * `Config/pegasusPDU.txt` - prototype config file for the Pegasus PDU/Hub
+ * `Sandbox/Pegasus_Sandbox.ipynb` - ASCOM interface sandbox for the Pegasus box
+
+ToDo:
+ * EAF focuser for the guide telescope (interface through MaxIM)
+ * Changes to code to replace "CCD" designation with "Science" for the camera.
+ * Lots more to come!
 
 ## Version 1.0.3 - 2026 Jun 06
 Updates from live testing:

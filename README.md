@@ -1,6 +1,6 @@
 # pyDEMONEXT
 
-**Current Version: v1.0.3 [2026 June 6]**
+**Current Version: v1.1.0 [2026 Nov 12]**
 
 See the [Release Notes](releases.md) for details.
 
