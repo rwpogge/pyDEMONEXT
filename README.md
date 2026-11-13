@@ -16,8 +16,8 @@ Files associated with the DEMONEXT control system computer, a Windows10 computer
  * MaxIm DL Pro 7 - for integrated telescope mount and instrument control functions (science camera, filter wheel, and guide camera)
  * PlaneWave STI - SiTech mount drive control software from PlaneWave for the Mathis mount
  * PlateWave PWI3 - PlaneWave software for the Hedrick Focuser
- * ASCOM drivers for all devices (SiTech, Finger Lakes camera and filter wheel, ZWO ASI guide camera)
-
+ * ASCOM drivers for all devices (SiTech, ZWO ASI6200MM science cameras, Finger Lakes filter wheel, ZWO ASI guide camera and EFA focuser, Pegasus Power Box)
+ 
 MaxIm DL classes are documented at [MaxIm DL Introduction and Tutorials](https://cdn.diffractionlimited.com/help/maximdl/MaxIm-DL.htm#t=Introduction.htm)
 
 Of specific interest are
