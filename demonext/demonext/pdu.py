@@ -1,13 +1,23 @@
 """DEMONEXT Power Distribution Unit interface class
 
-Class to remotely operate a power distribution unit (PDU).
+Class to implement remotely operate a power distribution units (PDUs).
 
-Currently implements a single class, RaritanPDU, to operate Raritan
-PDUs using Raritan's JSON-RPC API python bindings.  Designed for a
-Raritan PXO unit with 4 unmetered outlets and 1 metered inlet, which
-makes this relatively minimalist compared to the range of PDU
-functions in higher models.  Would require updates if the PDU model
-has individually-metered outlets or multiple inlets.
+Two classes are implemented:
+    
+RaritanPDU:
+    Operates a Raritan PXO PDUs using Raritan's JSON-RPC API python bindings.  
+    
+    Designed for a Raritan PXO unit with 4 unmetered outlets and 1 metered 
+    inlet, which makes this relatively minimalist compared to the range of 
+    PDU functions in higher models.  Would require updates if the PDU model 
+    has individually-metered outlets or multiple inlets.
+
+PegasusPDU:
+    Operates a Pegasus Astro Power Box using its native ASCOM interface
+    which is derived from the ASCOM Switch base class. This code is for 
+    the Power Box Advanced Gen 2, which has 4x 12VDC outputs that are 
+    toggled as a block not individually.  If updating to a Gen 3 PBA unit, 
+    will need different switch mapping.
 
 The structure of this module allows us to add other PDU system (e.g.,
 those that use generic HTTP or RPC instead of a product-specific
@@ -27,7 +37,8 @@ Modification History:
     2024 Dec 17 - added logging system (python logging facility) [rwp/osu]
     2024 Dec 29 - cleaned up docstrings [rwp/osu]
     2024 Dec 31 - bug check and cleanup with spyder [rwp/osu]
-
+    2026 Nov 15 - start of PegasusPDU class development [rwp/osu]
+    
 """
 
 import os
@@ -38,6 +49,10 @@ import time
 from raritan import rpc
 from raritan.rpc import pdumodel
 from raritan.rpc import peripheral
+
+# win23com client Dispatch() for ASCOM (Pegasus Power Box)
+
+from win32com.client import Dispatch
 
 # pathlib for path handling
 
@@ -61,7 +76,7 @@ class RaritanPDU:
     def __init__(self,*args,**kwargs):
         """
         Initialize the Raritan JSON-RPC interface and retrieve info we need to query
-        and command the PDU.
+        and command the Raritan PDU.
         
         Parameters
         ----------
@@ -97,12 +112,12 @@ class RaritanPDU:
 
         Description
         -----------
-        The PDU connection info (IP address, user, and password)
+        Raritan PDU connection info (IP address, user, and password)
         is expected either in the YAML runtime configuration file as the "pdu" entry
         or given with the kwargs in the code.
       
         The constructor establishes the RPC agent, model, and peripheral manager
-        needed to access PDU functions and data by class member functions and properties.
+        needed to access Raritan PDU functions and data by class member functions and properties.
 
         If a config file is given as the argument, it expects a YAML formatted file
         with the "pdu" dictionary entry with 3 required parameters:
@@ -165,7 +180,7 @@ class RaritanPDU:
                     try:
                         config = yaml.safe_load(stream)
                     except yaml.YAMLError as exp:
-                        msg = f"Cannot open runtime configuration file {cfgFile}: {exp}"
+                        msg = f"Cannot open Raritan runtime configuration file {cfgFile}: {exp}"
                         logger.exception(msg)
                         raise RuntimeError(msg)
 
@@ -191,7 +206,7 @@ class RaritanPDU:
                     haveOutNames = False
 
             else:
-                msg = f"Runtime configuration file {cfgFile} does not exist"
+                msg = f"Raritan runtime configuration file {cfgFile} does not exist"
                 logger.exception(msg)
                 raise RuntimeError(msg)
         
@@ -218,7 +233,7 @@ class RaritanPDU:
         try:
             self.pdm = peripheral.DeviceManager("/model/peripheraldevicemanager",self.agent)
         except Exception as exp:
-            msg = f"Cannot instantiate PDU peripheral device manager: {exp}"
+            msg = f"Cannot instantiate Raritan PDU peripheral device manager: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
         
@@ -227,7 +242,7 @@ class RaritanPDU:
         try:
             self.inlets = self.pdu.getInlets()
         except Exception as exp:
-            msg = f"Cannot get PDU inlets: {exp}"
+            msg = f"Cannot get Raritan PDU inlets: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
@@ -236,7 +251,7 @@ class RaritanPDU:
             try:
                 self.inletSensors = self.inlets[0].getSensors()
             except Exception as exp:
-                msg = f"Cannot get PDU inlet sensors: {exp}"
+                msg = f"Cannot get Raritan PDU inlet sensors: {exp}"
                 logger.exception(msg)
                 raise RuntimeError(msg)
         else:
@@ -247,7 +262,7 @@ class RaritanPDU:
         try:
             self.outlets = self.pdu.getOutlets()
         except Exception as exp:
-            msg = f"Cannot get PDU outlets: {exp}"
+            msg = f"Cannot get Raritan PDU outlets: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
         
@@ -301,7 +316,7 @@ class RaritanPDU:
             self.Temp = slots[0].getDevice() # peripheral temperature sensor device
             self.RH = slots[1].getDevice()   # peripheral humidity sensor device
         except Exception as exp:
-            msg = f"Cannot read PDU peripheral devices: {exp}"
+            msg = f"Cannot read Raritan PDU peripheral devices: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
         
@@ -325,16 +340,16 @@ class RaritanPDU:
     
     def getInletData(self):
         """
-        Read the PDU inlent sensors
+        Read the Raritan PDU inlent sensors
         
         Returns
         -------
         inletData : dict
-            dictionary with the PDU inlet sensor data
+            dictionary with the Raritan PDU inlet sensor data
         
         Description
         -----------
-        Reads the PDU inlet sensors and returns inletData dictionary
+        Reads the Raritan PDU inlet sensors and returns inletData dictionary
         with the data.  If a sensor read fails, reports -99.99 (not
         read) for value.
 
@@ -382,16 +397,16 @@ class RaritanPDU:
 
     def getInletFITS(self):
         """
-        Read the PDU inlet sensors and return a FITS dictionary
+        Read the Raritan PDU inlet sensors and return a FITS dictionary
         
         Returns
         -------
         inletData : dict
-            dictionary of PDU inlet sensor data with FITS-style keywords.
+            dictionary of Raritan PDU inlet sensor data with FITS-style keywords.
             
         Description
         -----------
-        Reads the PDU inlet sensors and returns inletFITS dictionary
+        Reads the Raritan PDU inlet sensors and returns inletFITS dictionary
         with the data in FITS keyword/value pairs ready for inserting
         to an image FITS header.  If a sensor read fails, reports
         -99.99 (not read) for value.
@@ -439,7 +454,7 @@ class RaritanPDU:
             
     def readEnv(self):
         """
-        Read peripheral environmental sensors connected to the PDU
+        Read peripheral environmental sensors connected to the Raritan PDU
 
         Returns
         -------
@@ -467,14 +482,14 @@ class RaritanPDU:
         except:
             airRH = -99.99
 
-        if self.verbose: logger.debug(f"Read sensors: T={airTemp:2f}C RH={airRH:.2f}%")
+        if self.verbose: logger.debug(f"Read Raritan sensors: T={airTemp:2f}C RH={airRH:.2f}%")
         
         return airTemp, airRH
     
 
     def getEnvFITS(self):
         """
-        Read PDU peripheral environmental sensors and return FITS cards
+        Read Raritan PDU peripheral environmental sensors and return FITS cards
 
         Returns
         -------
@@ -507,7 +522,7 @@ class RaritanPDU:
 
     def readTemp(self):
         """
-        Read the PDU peripheral temperature sensor
+        Read the Raritan DU peripheral temperature sensor
 
         Returns
         -------
@@ -516,7 +531,7 @@ class RaritanPDU:
 
         Description
         -----------
-        Returns a float with the PDU peripheral temperature sensor
+        Returns a float with the Raritan PDU peripheral temperature sensor
         reading in degrees C or -99.99 if sensor read failed
 
         See also readEnv(), readRH()
@@ -527,7 +542,7 @@ class RaritanPDU:
         except:
             airTemp = -99.99
 
-        if self.verbose: logger.debug(f"Read sensors: T={airTemp:2f}C")
+        if self.verbose: logger.debug(f"Read Raritan sensors: T={airTemp:2f}C")
         
         return airTemp
 
@@ -535,14 +550,14 @@ class RaritanPDU:
 
     def readRH(self):
         """
-        Read the PDU peripheral relative humidity sensor
+        Read the Raritan PDU peripheral relative humidity sensor
 
         Returns
         -------
         airRH : float
             relative humidity in percent (%).
 
-        Returns a float with the PDU peripheral relative humidity
+        Returns a float with the Raritan PDU peripheral relative humidity
         sensor reading in percent or -99.99 if sensor read failed.
 
         See also readEnv(), readTemp()
@@ -552,14 +567,14 @@ class RaritanPDU:
         except:
             airRH = -99.99
 
-        if self.verbose: logger.debug(f"Read sensors: RH={airRH:2f}%")
+        if self.verbose: logger.debug(f"Read Raritan sensors: RH={airRH:2f}%")
         
         return airRH
 
     
     def getOutlet(self,iOut):
         """
-        Get the power status of a PDU outlet by number
+        Get the power status of a Raritan PDU outlet by number
 
         Parameters
         ----------
@@ -582,7 +597,7 @@ class RaritanPDU:
         """
 
         if iOut < 1 or iOut > self.numOutlets:
-            msg = f"Outlet number {iOut} invalid: must be 1..{self.numOutets}"
+            msg = f"Raritan outlet number {iOut} invalid: must be 1..{self.numOutets}"
             logger.exception(msg)
             raise ValueError(msg)
 
@@ -593,14 +608,14 @@ class RaritanPDU:
             else:
                 return False
         except Exception as exp:
-            msg = f"Cannot read state of outlet {iOut}: {exp}"
+            msg = f"Cannot read state of Raritan outlet {iOut}: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
         
 
     def setOutlet(self,iOut,turnOn):
         """
-        Set the power state of a PDU outlet by number
+        Set the power state of a Raritan PDU outlet by number
 
         Parameters
         ----------
@@ -614,7 +629,7 @@ class RaritanPDU:
         ValueError
             raised if an invalid outlet number is given.
         RuntimeError
-            raised if it cannot set or get the PDU outlet state
+            raised if it cannot set or get the Raritan PDU outlet state
 
         Returns
         -------
@@ -641,14 +656,14 @@ class RaritanPDU:
             try:
                 outlet.setPowerState(outlet.PowerState.PS_ON)
             except Exception as exp:
-                msg = f"Cannot switch Outlet {iOut} ON: {exp}"
+                msg = f"Cannot switch Raritan outlet {iOut} ON: {exp}"
                 logger.exception(msg)
                 raise RuntimeError(msg)
         else:
             try:
                 outlet.setPowerState(outlet.PowerState.PS_OFF)
             except Exception as exp:
-                msg = f"Cannot switch Outlet {iOut} OFF: {exp}"
+                msg = f"Cannot switch Raritan outlet {iOut} OFF: {exp}"
                 logger.exception(msg)
                 raise RuntimeError(msg)
                 
@@ -657,21 +672,21 @@ class RaritanPDU:
         try:
             status = self.outState[iOut-1].getState().value
             if status:
-                logger.info(f"Outlet {iOut} switched ON")
+                logger.info(f"Raritan outlet {iOut} switched ON")
                 return True
             else:
-                logger.info(f"Outlet {iOut} switched OFF")
+                logger.info(f"Raritan outlet {iOut} switched OFF")
                 return False
             
         except Exception as exp:
-            msg = f"Cannot read power state of outlet {iOut}: {exp}"
+            msg = f"Cannot read power state of Raritan outlet {iOut}: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
 
     def cycleOutlet(self,iOut):
         """
-        Power cycle a PDU outlet by number
+        Power cycle a Raritan PDU outlet by number
 
         Parameters
         ----------
@@ -692,14 +707,14 @@ class RaritanPDU:
             
         Description
         -----------
-        Power cycles the outlet on the PDU.  Internally the PDU has a preset
+        Power cycles the outlet on the Raritan PDU.  Internally the Raritan PDU has a preset
         delay between powering off then back on of 10 seconds, but this
-        can be changed on the PDU admin interface.  We read this as the
-        outDelay property read from the PDU when the class was
+        can be changed on the Raritan PDU admin interface.  We read this as the
+        outDelay property read from the PRaritan DU when the class was
         instantiated.  
         
         This function will pause for a time of outDelay plus twice
-        switchDelay (once each for off then on) to wait give the PDU
+        switchDelay (once each for off then on) to wait give the Raritan PDU
         time to complete the power cycling operation before reading
         the outlet sensor to verify the post-cycling power state. For
         typical default values, power cycling an outlet takes about 12 seconds.
@@ -709,7 +724,7 @@ class RaritanPDU:
         """
         
         if iOut < 1 or iOut > self.numOutlets:
-            msg = f"Outlet number {iOut} invalid: must be 1..{self.numOutets}"
+            msg = f"Raritan outlet number {iOut} invalid: must be 1..{self.numOutets}"
             logger.exception(msg)
             raise ValueError(msg)
 
@@ -719,11 +734,11 @@ class RaritanPDU:
             outlet.cyclePowerState()
             time.sleep(self.outDelay[iOut-1]+2*self.switchDelay) # wait cycle delay + 2 switch delays (on/off)
             status = self.getOutlet(iOut)
-            logger.info(f"Outlet {iOut} power cycled, state={self.OnOff[status]}")
+            logger.info(f"Raritan outlet {iOut} power cycled, state={self.OnOff[status]}")
             return status
 
         except Exception as exp:
-            msg = f"Cannot power cycle outlet {iOut}: {exp}"
+            msg = f"Cannot power cycle Raritan outlet {iOut}: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
@@ -740,7 +755,7 @@ class RaritanPDU:
         Raises
         ------
         RuntimeError
-            raised if it cannot query the outlet states on the PDU.
+            raised if it cannot query the outlet states on the Raritan PDU.
 
         Returns
         -------
@@ -767,7 +782,7 @@ class RaritanPDU:
                 else:
                     states.append(False)
             except Exception as exp:
-                msg = f"Cannot read power state of outlet {iOut+1}: {exp}"
+                msg = f"Cannot read power state of Raritan outlet {iOut+1}: {exp}"
                 logger.exception(msg)
                 states = []
                 raise RuntimeError(msg)
@@ -777,7 +792,7 @@ class RaritanPDU:
     
     def switch(self,outName,action):
         """
-        Switch named outlet on or off.
+        Switch named Raritan outlet on or off.
 
         Parameters
         ----------
@@ -814,24 +829,24 @@ class RaritanPDU:
 
         outID = outName.lower()
         if outID not in self.outletNames:
-            msg = f"switch(): {outName} invalid, must be one of {self.outletNames}"
+            msg = f"switch(): Raritan outlet {outName} invalid, must be one of {self.outletNames}"
             logger.exception(msg)
             raise ValueError(msg)
         iOut = self.outletNames[outID]
 
         act = action.lower()
         if act not in ['on','off']:
-            msg = f"switch(): action {action} invalid: must be on or off"
+            msg = f"switch(): Raritan action {action} invalid: must be on or off"
             logger.exception(msg)
             raise ValueError(msg)
          
         try:
             status = self.setOutlet(iOut,act=='on')
-            logger.info(f"{outName} switched {self.OnOff[status]}")
+            logger.info(f"Raritan outlet {outName} switched {self.OnOff[status]}")
             return status
                         
         except Exception as exp:
-            msg = f"Cannot switch {outName} {action.upper()}: {exp}"
+            msg = f"Cannot switch Raritan outlet {outName} {action.upper()}: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
@@ -839,7 +854,7 @@ class RaritanPDU:
 
     def cycle(self,outName):
         """
-        Power cycle an outlet by name
+        Power cycle an Raritan outlet by name
 
         Parameters
         ----------
@@ -877,7 +892,7 @@ class RaritanPDU:
         """
         outID = outName.lower()
         if outID not in self.outletNames:
-            msg = f"cycle(): {outName} invalid, must be one of {self.outletNames}"
+            msg = f"cycle(): Raritan outlet {outName} invalid, must be one of {self.outletNames}"
             logger.exception(msg)
             raise ValueError(msg)
         iOut = self.outletNames[outID]
@@ -886,10 +901,10 @@ class RaritanPDU:
             self.outlets[iOut-1].cyclePowerState()
             time.sleep(self.outDelay[iOut-1]+2*self.switchDelay) # wait cycle delay + 2 switch delays (on/off)
             status = self.getOutlet(iOut)
-            logger.info(f"{outName} outlet power cycled, state={self.OnOff[status]}")
+            logger.info(f"Raritan outlet {outName} outlet power cycled, state={self.OnOff[status]}")
             return status
         except Exception as exp:
-            msg = f"Cannot power cycle {outName}: {exp}"
+            msg = f"Cannot power cycle Raritan outlet {outName}: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
@@ -929,13 +944,13 @@ class RaritanPDU:
 
         outID = outName.lower()
         if outID not in self.outletNames:
-            msg = f"isOn(): {outName} invalid, must be one of {self.outletNames}"
+            msg = f"isOn(): Raritan {outName} invalid, must be one of {self.outletNames}"
             logger.exception(msg)
             raise ValueError(msg)
         try:
             return self.getOutlet(self.outletNames[outID])
         except Exception as exp:
-            msg = f"Cannot read {outName} outlet state: {exp}"
+            msg = f"Cannot read Raritan outlet {outName} state: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
@@ -968,13 +983,13 @@ class RaritanPDU:
 
         outID = outName.lower()
         if outID not in self.outletNames:
-            msg = f"isOff(): {outName} invalid, must be one of {self.outletNames}"
+            msg = f"isOff(): Raritan {outName} invalid, must be one of {self.outletNames}"
             logger.exception(msg)
             raise ValueError(msg)
         try:
             return not self.getOutlet(self.outletNames[outID])
         except Exception as exp:
-            msg = f"Cannot read {outName} outlet state: {exp}"
+            msg = f"Cannot read Raritan outlet {outName} state: {exp}"
             logger.exception(msg)
             raise RuntimeError(msg)
 
@@ -987,7 +1002,7 @@ class RaritanPDU:
     
     def printOutlets(self):
         """
-        Print formatted status of all PDU outlets
+        Print formatted status of all Raritan PDU outlets
 
         Returns
         -------
@@ -1020,18 +1035,18 @@ class RaritanPDU:
 
     def printInlet(self):
         """
-        Print formatted status of the PDU inlet power sensors
+        Print formatted status of the Raritan PDU inlet power sensors
 
         Raises
         ------
         RuntimeError
-            Raised if it cannot read the PDU inlet sensors.
+            Raised if it cannot read the Raritan PDU inlet sensors.
 
         Returns
         -------
         None.
 
-        Prints a human-readable summary of relevant PDU inlet sensor data
+        Prints a human-readable summary of relevant Raritan PDU inlet sensor data
 
         See also low-level getInlet(), getInletFITS()  
         """
@@ -1062,13 +1077,13 @@ class RaritanPDU:
         Raises
         ------
         RuntimeError
-            raised if it cannot read the PDU peripheral sensors.
+            raised if it cannot read the Raritan PDU peripheral sensors.
 
         Returns
         -------
         None.
 
-        Prints a human-readable readout summary of the PDU periperal
+        Prints a human-readable readout summary of the Raritan PDU periperal
         temperature and humidity sensors.
 
         See also readEnv(), readTemp(), readRH(), getEnvFITS()
@@ -1077,7 +1092,7 @@ class RaritanPDU:
         try:
             temp,rh = self.readEnv()
         except Exception as exp:
-            raise RuntimeError(f"Cannot read PDU environmental sensor data: {exp}")
+            raise RuntimeError(f"Cannot read Raritan PDU environmental sensor data: {exp}")
         
         print("\nRaritan PDU peripheral sensors:")
         print(f"  Temperature: {temp:.2f}C")
@@ -1086,25 +1101,25 @@ class RaritanPDU:
         
     def printMetaData(self):
         """
-        Print the PDU inlet metdata
+        Print the Raritan PDU inlet metdata
 
         Raises
         ------
         RuntimeError
-            Raised if it cannot read the PDU inlet metadata.
+            Raised if it cannot read the Raritan PDU inlet metadata.
 
         Returns
         -------
         None.
 
-        Prints a human-readable summary of the PDU metadata.  The metadata
+        Prints a human-readable summary of the Raritan PDU metadata.  The metadata
         is presented in JSON format.
         """
 
         try:
             md = self.inlets[0].getMetaData()
         except Exception as exp:
-            raise RuntimeError(f"Cannot retrieve PDU metadata: {exp}")
+            raise RuntimeError(f"Cannot retrieve Raritan PDU metadata: {exp}")
 
         print("\nRaritan PDU inlet metadata:")
         print(md)
