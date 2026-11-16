@@ -11,7 +11,7 @@
 # Updates:
 #
 
-pegasus:
+ppb:
   ascomID: "ASCOM.Device1.Switch"
   switchDelay: 1    # switch operation delay in seconds
   outletNames: ["quad","adj","dewa","dewb","autodew","usb2"]
