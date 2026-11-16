@@ -6,7 +6,7 @@
 # late 2026 with the new sCMOS science camera.
 #
 # Initial Version: 
-#  2026 Nov 12 - rwp/osu
+#  2026 Nov 16 - rwp/osu
 #
 # Updates:
 #
@@ -14,6 +14,8 @@
 ppb:
   ascomID: "ASCOM.Device1.Switch"
   switchDelay: 1    # switch operation delay in seconds
-  outletNames: ["quad","adj","dewa","dewb","autodew","usb2"]
-  outletAddrs: [0,1,2,3,7,8]
+  switchNames: ["quad","adj","dewa","dewb","autodew","usb2"]
+  switchAddrs: [0,1,2,3,7,8]
+  sensorNames: ["Voltage","Current","Power"]
+  sensorAddrs: [4,5,6]
 
