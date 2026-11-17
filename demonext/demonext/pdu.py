@@ -851,7 +851,6 @@ class RaritanPDU:
             raise RuntimeError(msg)
 
     
-
     def cycle(self,outName):
         """
         Power cycle an Raritan outlet by name
@@ -1179,7 +1178,7 @@ class PegasusPDU:
             ascomID - the ASCOM ID of the Pegasus Power Box
             switchDelay - time delay following switching operation in seconds
             switches - dictionary of switches, format {addr:"switchID"}
-            sensorss - dictionary of sensors, format {addr:"sensorID"}
+            sensors - dictionary of sensors, format {addr:"sensorID"}
 
         If no config file is given, kwargs are used to set the parameters
 
@@ -1609,10 +1608,3 @@ class PegasusPDU:
         except Exception as exp:
             print(f"  Cannot read input power data: {exp}")
             
-
-
-            
-        
-        
-        
-        
