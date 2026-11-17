@@ -37,7 +37,7 @@ Modification History:
     2024 Dec 17 - added logging system (python logging facility) [rwp/osu]
     2024 Dec 29 - cleaned up docstrings [rwp/osu]
     2024 Dec 31 - bug check and cleanup with spyder [rwp/osu]
-    2026 Nov 15 - start of PegasusPDU class development [rwp/osu]
+    2026 Nov 16 - start of PegasusPDU class development [rwp/osu]
     
 """
 
@@ -133,7 +133,7 @@ class RaritanPDU:
         addr, user, and pass are *required*
 
         If no config file or valid kwargs are given, we try a default configuration file
-        in $HOME/.demonext/config/PDU.txt as a last resort.      
+        in $HOME/.demonext/config/raritanPDU.txt as a last resort.      
 
         """
 
@@ -1124,3 +1124,495 @@ class RaritanPDU:
         print("\nRaritan PDU inlet metadata:")
         print(md)
 
+###################################################################################
+
+# PegasusPDU Class
+
+class PegasusPDU:
+    """Pegasus Astro Power Box PDU ASCOM remote interface class"""
+
+    
+    def __init__(self,*args,**kwargs):
+        """
+        Initialize the Pegasus Power Box ASCOM interface and retrieve info we need to query
+        and command the Pegasus PDU.
+        
+        Parameters
+        ----------
+        *args : 
+            cfgFile : string
+                name of a YAML configuration file (including path) 
+            
+        **kwargs :
+            ascomID : string
+                ASCOM device ID of the Pegasus Power Box unit
+            switches: dict
+                Dictionary of switches - {addr:"ID"}
+            sensors: dict
+                Dictionary of sensors - {addr:"ID"}
+            switchDelay: float
+                time delay following switching operations in seconds
+
+        Raises
+        ------
+        ValueError
+            Raised if any arguments are invalid.
+        RuntimeError
+            Raised if the config file cannot be opened, or if the 
+            Power Box unit cannot be accessed.
+
+        Returns
+        -------
+        None.
+
+        Description
+        -----------
+        Pegasus Power Box connection info (ASCOM ID) is expected either in the 
+        YAML runtime configuration file or given with the kwargs in the code.
+      
+        The constructor establishes the ASCOM object and parameters needed
+        to operate the Pegasus Power Bo PDU functions and data by class member
+        functions and properties.
+
+        If a config file is given as the argument, it expects a YAML formatted file
+        with the "ppb" dictionary entry :
+            ascomID - the ASCOM ID of the Pegasus Power Box
+            switchDelay - time delay following switching operation in seconds
+            switches - dictionary of switches, format {addr:"switchID"}
+            sensorss - dictionary of sensors, format {addr:"sensorID"}
+
+        If no config file is given, kwargs are used to set the parameters
+
+        If no config file or valid kwargs are given, we try a default configuration file
+        in $HOME/.demonext/config/pegasusPDU.txt as a last resort.      
+
+        """
+
+        self.ppbInfo = {}
+        self.switchDelay = 1 # delay in seconds for outlet switch events
+        self.verbose = False # turn on very verbose logging
+        
+        # Default switches and sensors for the Pegasus Power Box Advance Gen 2
+        
+        self.switches = {"Quad":0,"Adj":1,"DewA":2,"DewB":3,"AutoDew":7,"USB2":8}
+        self.sensors = {"VDC":4,"Amps":5,"Watts":6}
+        
+        self.Name = ""
+        self.maxAddr = 0
+        self.numAddr = 0
+        
+        # Argument options from nothing, a config file, or individual keywords
+        
+        if len(args) > 0:
+            cfgFile = args[0]
+
+        elif len(kwargs) > 0:
+            cfgFile = None
+            for key, val in kwargs.items():
+                if key.lower() == "ascomid":
+                    self.ascomID = val
+                
+                elif key.lower() == "switchDelay":
+                    try:
+                        self.switchDelay = float(val)
+                    except Exception as exp:
+                        msg = f"Invalid switchDelay, must be float - {exp}"
+                        logger.exception(msg)
+                        raise ValueError(msg)
+                
+                elif key.lower() == "switches":
+                    self.switches = val
+                    
+                elif key.lower() == "sensors":
+                    self.sensors = val
+
+                else:
+                    msg = f"Unrecognized kwarg {key}, must be [ipaddr,userid,passwd,nocert,timeout,outlets]"
+                    logger.exception(msg)
+                    raise ValueError(msg)
+        
+        else:
+            # default config file
+            cfgFile = str(Path.home() / ".demonext/config/pegasusPDU.txt")
+
+        if cfgFile is not None:
+            if os.path.exists(cfgFile):
+                with open(cfgFile,"r") as stream:
+                    try:
+                        config = yaml.safe_load(stream)
+                    except yaml.YAMLError as exp:
+                        msg = f"Cannot open Raritan runtime configuration file {cfgFile}: {exp}"
+                        logger.exception(msg)
+                        raise RuntimeError(msg)
+
+                self.ppbInfo = config["ppb"]
+            
+                self.ascomID = self.ppbInfo["ipAddr"]
+                    
+                try:
+                    self.switches = self.pdbInfo["switches"]
+                except:
+                    self.switches = {"Quad":0,"Adj":1,"DewA":2,"DewB":3,"AutoDew":7,"USB2":8}
+                    
+                try:
+                    self.sensors = self.pdbInfo["sensors"]
+                except:
+                    self.sensors = {"VDC":4,"Amps":5,"Watts":6}
+                    
+                try:
+                    self.switchDelay = self.pduInfo["switchDelay"]
+                except:
+                    self.switchDelay = 1.0
+
+            else:
+                msg = f"Pegasus runtime configuration file {cfgFile} does not exist"
+                logger.exception(msg)
+                raise RuntimeError(msg)
+        
+        # Instantiate a win32 com dispatcher
+
+        try:
+            self.ppb = Dispatch(self.ascomID)
+        except Exception as exp:
+            msg = f"Cannot init Pegasus Power Box ASCOM object {self.ascomID}: {exp}"
+            logger.exception(msg)
+            raise RuntimeError(msg)
+
+        # Connect the Pegasus unit
+        
+        try:
+            self.ppb.Connected = True
+            self.Name = self.ppb.Name
+            self.numAddr = self.ppb.MaxSwitch
+            self.maxAddr = self.numAddr - 1
+            logger.info(f"Connected to {self.Name}, {self.numAddr} switches/sensors")
+            
+        except Exception as exp:
+            msg = f"Cannot connect to Pegasus Power Box: {exp}"
+            logger.exception(msg)
+            raise RuntimeError(msg)
+            
+        # Useful boolean translation dictionaries
+
+        self.OnOff = {True:"On",False:"Off"}
+        self.YesNo = {True:"Yes",False:"No"}
+        
+
+    # Methods
+
+    def getInletData(self):
+        '''
+        Retrieve Pegasus PDU power input sensor data (VDC, amps, watts)
+
+        Returns
+        -------
+        inletData : dict
+            dictionary with the Pegasus Power Box inlet data (VDC, amps, watts)
+            
+        Description
+        -----------
+        Reads the values of the Pegasus PDU input sensors (volts, current, 
+        power) and returns a dictionary with the current values. -99.99 is 
+        the no-read value.
+        
+        See also getInletFITS()
+        
+        '''
+        
+        inletData = {}
+        
+        for sensID,addr in self.sensors.items():
+            try:
+                inletData[sensID] = self.ppb.GetSwitchValue(addr)
+            except:
+                inletData[sensID] = -99.99
+        
+        return inletData
+    
+
+    def getInletFITS(self):
+        '''
+        Retrieve power input sensor data and return a FITS keyword dictionary 
+    
+        Returns
+        -------
+        inletFITS : dict
+            dictionary of Pegasus Power Obx inlet data as FITS-style keywords
+        
+        Description
+        -----------
+        Reads the values of the Pegasus PDU input sensors (VDC, amps, watts)
+        and retunrs them as FITS keyword=value pairs ready for inclusion in
+        FITS headers.  -99.99 is a no-read value.
+        
+        See also getInletData()
+        
+        '''
+        
+        inletFITS = {}
+        for sensID,addr in self.sensors.items():
+            try:
+                inletFITS[f"PB_{sensID}"] = self.ppb.GetSwitchValue(addr)
+            except:
+                inletFITS[f"PB_{sensID}"] = -99.99
+                
+        return inletFITS
+
+
+    def getSwitch(self,swAddr):
+        '''
+        Get switch state by switch number (0..N)
+        
+        Parameters
+        ----------
+        swAddr : int
+            Address of the switch.
+            
+        Returns
+        -------
+        boolean : 
+            Power status of the switch, True=On, False=OFF
+        
+        See also setSwitch()
+        '''
+        
+        if swAddr < 0 or swAddr > self.maxAddr:
+            msg = f"Pegasus Power Box switch {swAddr} invalid, must be 0..{self.maxAddr}"
+            logger.exception(msg)
+            raise ValueError(msg)
+            
+        try:
+            return self.ppb.getSwitch(swAddr)
+        
+        except Exception as exp:
+            msg = f"Cannot read state of Pegasus Power Box switch {swAddr}: {exp}"
+            logger.exception(msg)
+            raise RuntimeError(msg)
+            
+    
+    def setSwitch(self,swAddr,turnOn):
+        '''
+        Set the power state of a Pegasus Power Box switch by number
+
+        Parameters
+        ----------
+        swAddr : int
+            Address of the switch
+        turnOn : bool
+            True to turn switch ON, False to turn switch OFF
+
+        Returns
+        -------
+        boolean :
+            state of the switch after the requested operation
+        
+        Description
+        -----------
+        Sets a switch ON or OFF by number. The operation of the Pegasus 
+        Power Box switches is non-blocking, so we wait switchDelay before
+        verifying the switch status and reporting the result.
+        
+        See also getSwitch()
+        
+        '''
+        
+        if swAddr < 0 or swAddr > self.maxAddr:
+            msg = f"Pegasus Power Box switch {swAddr} invalid, must be 0..{self.maxAddr}"
+            logger.exception(msg)
+            raise ValueError(msg)
+
+        try:
+            self.ppb.SetSwitch(swAddr,turnOn)
+            time.sleep(self.switchDelay)
+            return self.ppb.GetSwitch(swAddr)
+        
+        except Exception as exp:
+            msg = f"Cannot set Pegasus Power Box switch {swAddr} {'ON' if turnOn else 'OFF'}: {exp}"
+            logger.exception(msg)
+            raise RuntimeError(msg)
+            
+        
+    def getSwitches(self):
+        '''
+        Retrieve the status of all switches on the Pegasus Power Box
+
+        Returns
+        -------
+        swState : dict
+            dictionary of switch status as booleans (True=ON, False=OFF)
+            
+        Description
+        -----------
+        Reads all switches and returns their status ON (True) or OFF (False)
+        as a dictionary
+        
+        See also getSwitch() to return state of one switch
+        '''
+        
+        swState = {}
+        for swName,swAddr in self.switches.items():
+            try:
+                swState[swName] = self.ppb.getSwitch(swAddr)
+            except Exception as exp:
+                msg = f"Cannot read Pegasus Power Box switch {swName} ({swAddr}) state: {exp}"
+                logger.exception(msg)
+                raise RuntimeError(msg)
+                
+        return swState
+    
+    
+    def switch(self,swName,action):
+        '''
+        Turn a named Pegasus Power Box switch on or off
+        
+        Parameters
+        ----------
+        swName : string
+            Name of the switch (case-insensitive).
+        action : string
+            switch action, ON or OFF (case-insensitive).
+
+        Returns
+        -------
+        swState : bool
+            Power state of the named switch, True=ON, False=OFF
+            
+        See also: setSwitch(), getSwitch()
+        '''
+    
+        # validate the requested switch name
+        
+        if swName.lower() in [x.lower() for x in [*self.switches.keys()]]:
+            swAddr = {k.lower():v for k,v in self.switches.items()}[swName.lower()]
+        else:
+            msg = f"ERROR: Requested Pegasus Power Box switch {swName} is invalid"
+            logger.error(msg)
+            raise ValueError(msg)
+            
+        # got a valid switch, perform action if ON or OFF
+
+        if action.upper in ["ON","OFF"]:    
+            self.ppb.SetSwitch(swAddr,action.upper()=="ON")
+            time.sleep(self.switchDelay)
+            return self.ppb.getSwitch(swAddr)
+        else:
+            msg = f"ERROR: Requested Pegasus Power Box switch action {action} invalid, must be ON or OFF"
+            logger.error(msg)
+            raise ValueError(msg)
+            
+
+    def isOn(self,swName):
+        '''
+        Is named Pegasus switch on?
+
+        Parameters
+        ----------
+        swName : string
+            Name of the switch to test.
+
+        Returns
+        -------
+            bool : True if On, False if Off
+            
+        Description
+        -----------
+        Tests to see if a named switch is ON.
+        
+        See also isOff()
+        
+        '''    
+        # validate the requested switch name
+        
+        if swName.lower() in [x.lower() for x in [*self.switches.keys()]]:
+            swAddr = {k.lower():v for k,v in self.switches.items()}[swName.lower()]
+        else:
+            msg = f"ERROR: Requested Pegasus Power Box switch {swName} is invalid"
+            logger.error(msg)
+            raise ValueError(msg)
+        
+        # Test is switch is on
+        
+        try:
+            return self.ppb.GetSwitch(swAddr)
+        except Exception as exp:
+            msg = f"Cannot read Pegasus Power Box switch {swName} (addr: {swAddr} state: {exp}"
+            logger.exception(msg)
+            raise RuntimeError(msg)
+            
+        
+    def isOff(self,swName):
+        '''
+        Is named Pegasus switch Off?
+
+        Parameters
+        ----------
+        swName : string
+            Name of the switch to test.
+
+        Returns
+        -------
+            bool : True if Off, False if On
+            
+        Description
+        -----------
+        Tests to see if a named switch is Off.
+    
+        See also isOn()
+        
+        '''    
+        # validate the requested switch name
+        
+        if swName.lower() in [x.lower() for x in [*self.switches.keys()]]:
+            swAddr = {k.lower():v for k,v in self.switches.items()}[swName.lower()]
+        else:
+            msg = f"ERROR: Requested Pegasus Power Box switch {swName} is invalid"
+            logger.error(msg)
+            raise ValueError(msg)
+        
+        # Test if switch is off
+        
+        try:
+            return not self.ppb.GetSwitch(swAddr)
+        except Exception as exp:
+            msg = f"Cannot read Pegasus Power Box switch {swName} (addr: {swAddr} state: {exp}"
+            logger.exception(msg)
+            raise RuntimeError(msg)
+            
+
+    def printStatus(self):
+        '''
+        Print a formatted table of the Pegasus Power Box status.
+
+        Returns
+        -------
+        None
+        '''
+        
+        print("\nPegasus Power Box Status:")
+        print(f"  Name: {self.Name}")
+        print(f"  Switches/Sensors: {self.numAddr}")
+        print("Switches:")
+        try:
+            swState = self.getSwitches()
+            for swName,swAddr in self.switches.items():
+                print(f"  Switch {swAddr}: {swName}: {'ON' if swState[swName] else 'OFF'}")
+        except Exception as exp:
+            print(f"  Cannot read Pegasus switch states: {exp}")
+        
+        print("Input: ")
+        try:
+            inData = self.getInletData()
+            inStr = "  Power In: "
+            for inName in self.sensors:
+                inStr += f"{inData[inName]} {inName} "
+            print(inStr)
+        except Exception as exp:
+            print(f"  Cannot read input power data: {exp}")
+            
+
+
+            
+        
+        
+        
+        
