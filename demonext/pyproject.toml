@@ -1,6 +1,6 @@
 [project]
 name = "demonext"
-version = "1.0.3"
+version = "1.1.0"
 description = "DEMONEXT robotic telescope operations package"
 authors = [
     {name = "Richard Pogge",email = "rwpogge@gmail.com"}

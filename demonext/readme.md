@@ -1,6 +1,6 @@
 # DEMONEXT observatory control system
 
-**Updated: 2026 Jun 06 [rwp/osu]**
+**Updated: 2026 Nov 17 [rwp/osu]**
 
 See the [Release Notes](releases.md) for details.
 
@@ -17,7 +17,7 @@ Submodules implemented to date:
  * `focuser.py` - PlaneWave Hedrick focuser operation (`Focuser` class) with PWI3.
  * `guider.py` - DEMONEXT science guiding (`Guider` class)
  * `obsfile.py` - Observation file handling ('ObsFile` class)
- * `pdu.py` - Raritan power-distribution unit query and control (`RaritanPDU` class)
+ * `pdu.py` - Power-distribution unit query and control (`RaritanPDU` and `PegasusPDU` classes)
  * `site.py` - Observatory site info for the Sierra Remote Observatory (`Site` class)
  * `telescope.py` - telescope mount operation (`Telescope` class) with PlaneWave STI interface and ASCOM
 

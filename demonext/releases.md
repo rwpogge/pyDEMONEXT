@@ -1,6 +1,9 @@
 # DEMONEXT module release notes
 
-**Last Release: 2026 June 06**
+**Last Release: 2026 Nov 17**
+
+## Version 1.1.0 - 2026 Nov 17
+Post-commissioning updates in preparation for replacement of the Finger Lakes ProLine CCD Camera with the ZWO sCMOS camera and the addition of a Pegasus Astro Power Box Advanced unit to replace the USB and DC power distribution functions of the Finger Lakes ProLine camera.
 
 ## Version 1.0.3 - 2026 Jun 06
 Live testing at SRO.
