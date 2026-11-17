@@ -14,6 +14,6 @@
 ppb:
   ascomID: "ASCOM.Device1.Switch"
   switchDelay: 1    # switch operation delay in seconds
-  switches: {"quad":0,"adj":1,"dewa":2:"dewb":3:"autodew":7,"usb2"L:8}
+  switches: {"quad":0,"adj":1,"dewa":2,"dewb":3,"autodew":7,"usb2":8}
   sensors: {"vdc":4,"amps":5,"watt":6}
 
